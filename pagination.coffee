@@ -1,4 +1,4 @@
-# Pagination.coffee - A jQuery Pagination PLugin
+# Pagination.coffee - A jQuery Pagination Plugin
 # Pagination.coffee - jQuery分页插件
 # 
 # Author Xiaohang Yu
@@ -16,7 +16,7 @@ class Pagination
 		@options = options
 		@remote = options.remote
 		@url = if @remote then options.url else ''
-		@values = if @remote then [] else options.values
+		@values = if options.values then options.values else []
 		@method = if options.method then options.method else 'GET'
 		@width = options.width
 		@height = options.height
@@ -44,6 +44,10 @@ class Pagination
 				return
 		)
 
+	setValues: (val) ->
+		@values = val
+		return
+
 	# Inflate current data to table
 	# 填充数据
 	inflate: (jqObj, pageNum) ->
@@ -63,11 +67,9 @@ class Pagination
 		## 清空旧值及监听器
 		$(document.body).undelegate('#prev', 'click')
 		$(document.body).undelegate('#next', 'click')
-		alert(@pageIds)
-		#for i in @pageIds
-		#	$(document.body).undelegate(i, 'click')
+		for i in @pageIds
+			$(document.body).undelegate(i, 'click')
 		@pageIds = []
-		alert(@buttonIds)
 		for j in @buttonIds
 			$(document.body).undelegate(j, 'click')
 		@buttonIds = []
@@ -85,18 +87,20 @@ class Pagination
 		# 填充行数据
 		thisPage = @values[startingIdx..startingIdx + @limit - 1]
 		uid = 0
-		$.each(thisPage, (idx, e) ->
+		$.each(thisPage, (idx, eachObj) ->
 			row = $('<tr>').append('<td><input type="checkbox" class="rowSelect" /></td>')
-			$.each(e, (idx, e) ->
-				row.append($('<td>').text(e))
-				return
+			row.data('id', eachObj.id)
+			row.data('rowData', eachObj.data)
+			$.each(eachObj.data, (idx, eachCell) ->
+				row.append($('<td>').text(eachCell))
 			)
 			$.each(self.buttons, (name, handler) ->
 				buttonId = "button-#{uid++}"
 				row.append("<td><button class=\"btn btn-small\" id=#{buttonId}>#{name}</button></td>")
 				$(document.body).on('click', "##{buttonId}", (e) ->
 					e.preventDefault()
-					handler()
+					parentRow = $(this).parent().parent()
+					handler(parentRow.data('id'), parentRow.data('rowData'))
 					return
 				)
 				self.buttonIds.push("##{buttonId}")
@@ -105,7 +109,7 @@ class Pagination
 			table.children('tbody').append(row)
 			return
 		)
-
+		
 		# Create pagination bar
 		# 创建分页条
 
@@ -151,11 +155,20 @@ class Pagination
 # 在jQuery中定义插件函数
 `
 $.fn.paginate = function (options) {
-	var args = Array.prototype.slice.call(arguments);
-
-	if (options === "inflate" && pg) {
-		pg.inflate(this, arguments[1])
-		return this;
+	if (typeof(pg) !== "undefined") {
+		if (options === "get") {
+			return pg;
+		}
+		else if (options === "inflate") {
+			pg.inflate(this, arguments[1]);
+			return this;
+		}
+		else if (options === "setValues") {
+			pg.setValues(arguments[1]);
+		}
+		else {
+			return this;
+		}
 	}
 	pg = new Pagination(options);
 	pg.inflate(this, 1);
