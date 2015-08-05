@@ -1,6 +1,6 @@
 # jQuery Pagination Plugin
 
-This is a simple jQuery pagination plugins written in CoffeeScript.
+This is a simple jQuery pagination plugin written in CoffeeScript.
 
 ## Dependencies
 
