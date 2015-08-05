@@ -38,7 +38,7 @@ var options = {
 	url: "http://example.com", // Required if remote is true. The URL to retrieve information from
 	method: "get" // Optional. Defaults to GET
 	limit: 5, // Required. Number of items to display on one page
-	headerRow: ['a', 'b'] // Required. Header row definition
+	headerRow: ["a", "b"] // Required. Header row definition
 	values: [ // Required. Set table values
 			{
 				id: 1, // Totally arbitrary, but a unique identifier is recommended
@@ -52,7 +52,11 @@ var options = {
 	buttons: { // Optional. Define buttons at the end of each row
 		// "Fantastic" will be the value of button, and the value is the handler
 		"Fantastic!": function(id, data) { // id and data are the row values passed in above
-			alert("something");
+			alert("Something");
+		},
+		// You can use HTML in key
+		"<i class="icon-plus">": function(id, data) {
+			alert("Even better.");
 		}
 	}
 }
