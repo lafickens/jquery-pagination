@@ -6,6 +6,14 @@
 # 
 # On Aug. 3rd, 2015
 
+# Helper functions
+# 工具函数
+countLength = (obj) ->
+	count = 0
+	for i in obj
+		count++ if obj.hasOwnProperty(i)
+	count
+
 # Pagination class definition
 # 分页类定义
 class Pagination
@@ -53,14 +61,13 @@ class Pagination
 	inflate: (jqObj, pageNum) ->
 		return if pageNum < 1 or pageNum > @maxPage
 		startingIdx = this.getStartingIndex(pageNum)
-		console.log("Inflating page #{pageNum}, starting at index #{startingIdx}")
 
 		# Clear
 		# 清空之前值
 		jqObj.empty()
 
 		self = this
-		table = $('<table class="table" id="pagination-table"><thead></thead><tbody></tbody></table>')
+		table = $('<table class="table" id="pagination-table"><thead><tr></tr></thead><tbody></tbody></table>')
 		bar = $('<div class="pagination pagination-centered" id="pagination-bar"><ul></ul></div>')
 
 		## Clear old data and handlers
@@ -76,12 +83,13 @@ class Pagination
 
 		# Inflate header row
 		# 生成标题栏
-		table.children('thead').append('<th></th>')
+		theadrow = table.children('thead').children('tr')
+		theadrow.append('<th></th>')
 		$.each(@headerRow, (idx, e) ->
-			table.children('thead').append($('<th>').text(e))
+			theadrow.append($('<th>').text(e))
 			return
 		)
-		table.children('thead').append('<th></th>') if Object.keys(@buttons).length isnt 0
+		theadrow.append('<th></th>') if countLength(@buttons) isnt 0
 
 		# Inflate body values
 		# 填充行数据
@@ -125,8 +133,8 @@ class Pagination
 		## Page numbers
 		## 页码
 		for i in [1..@maxPage]
-			bar.children("ul").append($("<li>").append("<a href=\"javascript:void(0);\" id=\"to-page-#{i}\">#{i}</a>"))
-			$(document.body).on('click', "#to-page-#{i}", (e) ->
+			bar.children("ul").append("<li><a href=\"javascript:void(0);\" id=\"to-page-#{i}\">#{i}</a></li>")
+			$(document.body).delegate("#to-page-#{i}", 'click', (e) ->
 				e.preventDefault()
 				$('#pagination-table').parent().paginate('inflate', i)
 				return
@@ -165,9 +173,6 @@ $.fn.paginate = function (options) {
 		}
 		else if (options === "setValues") {
 			pg.setValues(arguments[1]);
-		}
-		else {
-			return this;
 		}
 	}
 	pg = new Pagination(options);
