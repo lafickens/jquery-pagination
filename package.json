@@ -1,0 +1,24 @@
+{
+  "name": "jquery-pagination",
+  "version": "1.0.0",
+  "description": "A simple pagination plugin for jQuery.",
+  "main": "pagination.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lafickens/jquery-pagination.git"
+  },
+  "keywords": [
+    "jQuery",
+    "pagination",
+    "ui"
+  ],
+  "author": "Xiaohang Yu",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/lafickens/jquery-pagination/issues"
+  },
+  "homepage": "https://github.com/lafickens/jquery-pagination#readme"
+}

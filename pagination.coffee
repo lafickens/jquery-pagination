@@ -32,6 +32,7 @@ class Pagination
 		@headerRow = options.headerRow
 		@buttons = if options.buttons then options.buttons else {}
 		@maxPage = if Math.ceil(@values.length / @limit) is 0 then 1 else Math.ceil(@values.length / @limit)
+		@rowIds = []
 		@pageIds = []
 		@buttonIds = []
 		retrieve() if @remote
@@ -56,6 +57,10 @@ class Pagination
 		@values = val
 		return
 
+	deleteRow: (id) ->
+		$("#row-#{id}").remove()
+		return
+
 	# Inflate current data to table
 	# 填充数据
 	inflate: (jqObj, pageNum) ->
@@ -72,14 +77,15 @@ class Pagination
 
 		## Clear old data and handlers
 		## 清空旧值及监听器
-		$(document.body).undelegate('#prev', 'click')
-		$(document.body).undelegate('#next', 'click')
-		for i in @pageIds
-			$(document.body).undelegate(i, 'click')
+		$('#prev').off('click')
+		$('#next').off('click')
+		for pi in @pageIds
+			$("#to-page-#{pi}").off('click')
 		@pageIds = []
-		for j in @buttonIds
-			$(document.body).undelegate(j, 'click')
+		for bi in @buttonIds
+			$("#{bi}").off('click')
 		@buttonIds = []
+		@rowIds = []
 
 		# Inflate header row
 		# 生成标题栏
@@ -94,16 +100,17 @@ class Pagination
 		# Inflate body values
 		# 填充行数据
 		thisPage = @values[startingIdx..startingIdx + @limit - 1]
-		uid = 0
+		buttonId = 0
 		$.each(thisPage, (idx, eachObj) ->
-			row = $('<tr>').append('<td><input type="checkbox" class="rowSelect" /></td>')
+			row = $("<tr id=\"row-#{eachObj.id}\"></tr>").append('<td><input type="checkbox" class="rowSelect" /></td>')
+			self.rowIds.push("row-#{eachObj.id}")
 			row.data('id', eachObj.id)
 			row.data('rowData', eachObj.data)
 			$.each(eachObj.data, (idx, eachCell) ->
 				row.append($('<td>').text(eachCell))
 			)
 			$.each(self.buttons, (name, handler) ->
-				buttonId = "button-#{uid++}"
+				buttonId = "button-#{buttonId++}"
 				row.append("<td><button class=\"btn btn-small\" id=#{buttonId}>#{name}</button></td>")
 				$(document.body).on('click', "##{buttonId}", (e) ->
 					e.preventDefault()
@@ -121,10 +128,48 @@ class Pagination
 		# Create pagination bar
 		# 创建分页条
 
+		## First page
+		## 第一页
+		bar.children('ul').append('<li><a href="javascript:void(0);" id="first-page">&laquo;</a></li>')
+
 		## Previous page
 		## 上一页
-		bar.children('ul').append('<li><a href="javascript:void(0);" id="prev">&laquo;</a></li>');
-		$(document.body).on('click', '#prev', (e) ->
+		bar.children('ul').append('<li><a href="javascript:void(0);" id="prev-page"><</a></li>')
+
+		## Page numbers
+		## 页码
+		for i in [1..@maxPage]
+			bar.children('ul').append("<li><a href=\"javascript:void(0);\" id=\"to-page-#{i}\">#{i}</a></li>")
+			self.pageIds.push(i)
+
+		## Next page
+		## 下一页
+		bar.children('ul').append('<li><a href="javascript:void(0);" id="next-page">></a></li>')
+		
+		## Last page
+		## 最后页
+		bar.children('ul').append('<li><a href="javascript:void(0);" id="last-page">></a></li>')
+		
+
+		# Add to DOM
+		# 填充至DOM
+		jqObj.append(table)
+		jqObj.append(bar)
+
+		# Register pagination bar listeners
+		# 注册分页条监听器
+
+		## First page
+		## 第一页
+		$('#first-page').click((e) ->
+			e.preventDefault()
+			$('#pagination-table').parent().paginate('inflate', 1)
+			return
+		)
+
+		## Previous page
+		## 上一页
+		$('#prev-page').click((e) ->
 			e.preventDefault()
 			$('#pagination-table').parent().paginate('inflate', pageNum - 1)
 			return
@@ -132,32 +177,29 @@ class Pagination
 
 		## Page numbers
 		## 页码
-		for i in [1..@maxPage]
-			bar.children("ul").append("<li><a href=\"javascript:void(0);\" id=\"to-page-#{i}\">#{i}</a></li>")
-			$(document.body).delegate("#to-page-#{i}", 'click', (e) ->
+		for pageId in @pageIds
+			$("#to-page-#{pageId}").click((e) ->
 				e.preventDefault()
-				$('#pagination-table').parent().paginate('inflate', i)
+				$('#pagination-table').parent().paginate('inflate', pageId)
 				return
 			)
-			self.pageIds.push("#to-page-#{i}")
 
 		## Next page
 		## 下一页
-		bar.children('ul').append('<li><a href="javascript:void(0);" id="next">&raquo;</a></li>')
-		$(document.body).on('click', '#next', (e) ->
+		$('#next-page').click((e) ->
 			e.preventDefault()
 			$('#pagination-table').parent().paginate('inflate', pageNum + 1)
 			return
 		)
 
-		## Set selected
-		## 设置按钮已选状态
-		$("to-page-#{pageNum}").addClass('disabled')
+		## Last page
+		## 最后页
+		$('#last').click((e) ->
+			e.preventDefault()
+			$('#pagination-table').parent().paginate('inflate', @maxPage)
+			return
+		)
 
-		# Add to DOM
-		# 填充至DOM
-		jqObj.append(table)
-		jqObj.append(bar)
 
 # Define plugin function in jQuery
 # 在jQuery中定义插件函数
@@ -173,6 +215,11 @@ $.fn.paginate = function (options) {
 		}
 		else if (options === "setValues") {
 			pg.setValues(arguments[1]);
+			return this;
+		}
+		else if (options === "deleteRow") {
+			pg.deleteRow(arguments[1]);
+			return this;
 		}
 	}
 	pg = new Pagination(options);

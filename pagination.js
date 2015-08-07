@@ -3,10 +3,10 @@
   var Pagination, countLength;
 
   countLength = function(obj) {
-    var count, i, k, len;
+    var count, i, j, len;
     count = 0;
-    for (k = 0, len = obj.length; k < len; k++) {
-      i = obj[k];
+    for (j = 0, len = obj.length; j < len; j++) {
+      i = obj[j];
       if (obj.hasOwnProperty(i)) {
         count++;
       }
@@ -27,6 +27,7 @@
       this.headerRow = options.headerRow;
       this.buttons = options.buttons ? options.buttons : {};
       this.maxPage = Math.ceil(this.values.length / this.limit) === 0 ? 1 : Math.ceil(this.values.length / this.limit);
+      this.rowIds = [];
       this.pageIds = [];
       this.buttonIds = [];
       if (this.remote) {
@@ -53,8 +54,12 @@
       this.values = val;
     };
 
+    Pagination.prototype.deleteRow = function(id) {
+      $("#row-" + id).remove();
+    };
+
     Pagination.prototype.inflate = function(jqObj, pageNum) {
-      var bar, i, j, k, l, len, len1, m, ref, ref1, ref2, self, startingIdx, table, theadrow, thisPage, uid;
+      var bar, bi, buttonId, i, j, k, l, len, len1, len2, m, pageId, pi, ref, ref1, ref2, ref3, self, startingIdx, table, theadrow, thisPage;
       if (pageNum < 1 || pageNum > this.maxPage) {
         return;
       }
@@ -63,20 +68,21 @@
       self = this;
       table = $('<table class="table" id="pagination-table"><thead><tr></tr></thead><tbody></tbody></table>');
       bar = $('<div class="pagination pagination-centered" id="pagination-bar"><ul></ul></div>');
-      $(document.body).undelegate('#prev', 'click');
-      $(document.body).undelegate('#next', 'click');
+      $('#prev').off('click');
+      $('#next').off('click');
       ref = this.pageIds;
-      for (k = 0, len = ref.length; k < len; k++) {
-        i = ref[k];
-        $(document.body).undelegate(i, 'click');
+      for (j = 0, len = ref.length; j < len; j++) {
+        pi = ref[j];
+        $("#to-page-" + pi).off('click');
       }
       this.pageIds = [];
       ref1 = this.buttonIds;
-      for (l = 0, len1 = ref1.length; l < len1; l++) {
-        j = ref1[l];
-        $(document.body).undelegate(j, 'click');
+      for (k = 0, len1 = ref1.length; k < len1; k++) {
+        bi = ref1[k];
+        $("" + bi).off('click');
       }
       this.buttonIds = [];
+      this.rowIds = [];
       theadrow = table.children('thead').children('tr');
       theadrow.append('<th></th>');
       $.each(this.headerRow, function(idx, e) {
@@ -86,18 +92,18 @@
         theadrow.append('<th></th>');
       }
       thisPage = this.values.slice(startingIdx, +(startingIdx + this.limit - 1) + 1 || 9e9);
-      uid = 0;
+      buttonId = 0;
       $.each(thisPage, function(idx, eachObj) {
         var row;
-        row = $('<tr>').append('<td><input type="checkbox" class="rowSelect" /></td>');
+        row = $("<tr id=\"row-" + eachObj.id + "\"></tr>").append('<td><input type="checkbox" class="rowSelect" /></td>');
+        self.rowIds.push("row-" + eachObj.id);
         row.data('id', eachObj.id);
         row.data('rowData', eachObj.data);
         $.each(eachObj.data, function(idx, eachCell) {
           return row.append($('<td>').text(eachCell));
         });
         $.each(self.buttons, function(name, handler) {
-          var buttonId;
-          buttonId = "button-" + (uid++);
+          buttonId = "button-" + (buttonId++);
           row.append("<td><button class=\"btn btn-small\" id=" + buttonId + ">" + name + "</button></td>");
           $(document.body).on('click', "#" + buttonId, function(e) {
             var parentRow;
@@ -109,27 +115,40 @@
         });
         table.children('tbody').append(row);
       });
-      bar.children('ul').append('<li><a href="javascript:void(0);" id="prev">&laquo;</a></li>');
-      $(document.body).on('click', '#prev', function(e) {
+      bar.children('ul').append('<li><a href="javascript:void(0);" id="first-page">&laquo;</a></li>');
+      bar.children('ul').append('<li><a href="javascript:void(0);" id="prev-page"><</a></li>');
+      for (i = l = 1, ref2 = this.maxPage; 1 <= ref2 ? l <= ref2 : l >= ref2; i = 1 <= ref2 ? ++l : --l) {
+        bar.children('ul').append("<li><a href=\"javascript:void(0);\" id=\"to-page-" + i + "\">" + i + "</a></li>");
+        self.pageIds.push(i);
+      }
+      bar.children('ul').append('<li><a href="javascript:void(0);" id="next-page">></a></li>');
+      bar.children('ul').append('<li><a href="javascript:void(0);" id="last-page">></a></li>');
+      jqObj.append(table);
+      jqObj.append(bar);
+      $('#first-page').click(function(e) {
+        e.preventDefault();
+        $('#pagination-table').parent().paginate('inflate', 1);
+      });
+      $('#prev-page').click(function(e) {
         e.preventDefault();
         $('#pagination-table').parent().paginate('inflate', pageNum - 1);
       });
-      for (i = m = 1, ref2 = this.maxPage; 1 <= ref2 ? m <= ref2 : m >= ref2; i = 1 <= ref2 ? ++m : --m) {
-        bar.children("ul").append("<li><a href=\"javascript:void(0);\" id=\"to-page-" + i + "\">" + i + "</a></li>");
-        $(document.body).delegate("#to-page-" + i, 'click', function(e) {
+      ref3 = this.pageIds;
+      for (m = 0, len2 = ref3.length; m < len2; m++) {
+        pageId = ref3[m];
+        $("#to-page-" + pageId).click(function(e) {
           e.preventDefault();
-          $('#pagination-table').parent().paginate('inflate', i);
+          $('#pagination-table').parent().paginate('inflate', pageId);
         });
-        self.pageIds.push("#to-page-" + i);
       }
-      bar.children('ul').append('<li><a href="javascript:void(0);" id="next">&raquo;</a></li>');
-      $(document.body).on('click', '#next', function(e) {
+      $('#next-page').click(function(e) {
         e.preventDefault();
         $('#pagination-table').parent().paginate('inflate', pageNum + 1);
       });
-      $("to-page-" + pageNum).addClass('disabled');
-      jqObj.append(table);
-      return jqObj.append(bar);
+      return $('#last').click(function(e) {
+        e.preventDefault();
+        $('#pagination-table').parent().paginate('inflate', this.maxPage);
+      });
     };
 
     return Pagination;
@@ -148,6 +167,11 @@ $.fn.paginate = function (options) {
 		}
 		else if (options === "setValues") {
 			pg.setValues(arguments[1]);
+			return this;
+		}
+		else if (options === "deleteRow") {
+			pg.deleteRow(arguments[1]);
+			return this;
 		}
 	}
 	pg = new Pagination(options);
